@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile – QuizMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="app-navbar"></div>
+
+  <div class="app-container">
+    <div id="app-sidebar"></div>
+
+    <main class="main-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <h3 class="fw-bold mb-1">User Profile</h3>
+          <p class="text-secondary small mb-0">Manage your personal information, education, skills, and learning interests.</p>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Profile Picture & Overview Card -->
+        <div class="col-lg-4">
+          <div class="card card-custom p-4 text-center">
+            <img id="profile-avatar-img" src="https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff" 
+                 alt="Avatar" class="rounded-circle mx-auto mb-3 shadow-sm" width="100" height="100" style="object-fit: cover;">
+            
+            <h5 class="fw-bold mb-1" id="profile-card-name">--</h5>
+            <p class="text-muted small mb-2" id="profile-card-email">--</p>
+            <span class="badge bg-primary-subtle text-primary mb-3" id="profile-card-role">Learner</span>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-start w-100">Avatar Image URL</label>
+              <input type="text" id="avatar-input" class="form-control form-control-sm" placeholder="Paste image URL...">
+              <button class="btn btn-outline-custom btn-sm w-100 mt-2" onclick="saveAvatar()">
+                Update Picture
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editable Details Form -->
+        <div class="col-lg-8">
+          <div class="card card-custom p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-person-lines-fill text-primary me-2"></i>Edit Profile Details</h5>
+
+            <form id="profile-form">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Full Name</label>
+                  <input type="text" id="prof-name" class="form-control" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Email Address (Read-only)</label>
+                  <input type="email" id="prof-email" class="form-control bg-light" readonly>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">Education / Degree</label>
+                  <input type="text" id="prof-education" class="form-control" placeholder="e.g. B.Tech Computer Science">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">Skills (Comma-separated)</label>
+                  <input type="text" id="prof-skills" class="form-control" placeholder="e.g. Java, Python, SQL, C++, Spring Boot">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">Learning Interests</label>
+                  <input type="text" id="prof-interests" class="form-control" placeholder="e.g. Artificial Intelligence, Machine Learning, Data Structures">
+                  <div class="form-text small">Our Python AI engine utilizes these interests to recommend suitable quizzes.</div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">Bio / About Me</label>
+                  <textarea id="prof-bio" class="form-control" rows="3" placeholder="Tell us about yourself..."></textarea>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-top text-end">
+                <button type="submit" class="btn btn-primary-custom px-4">
+                  <i class="bi bi-save me-1"></i> Save Profile Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const profile = await Api.get('/user/profile');
+        if (!profile) return;
+
+        document.getElementById('prof-name').value = profile.fullName || '';
+        document.getElementById('prof-email').value = profile.email || '';
+        document.getElementById('prof-education').value = profile.education || '';
+        document.getElementById('prof-skills').value = profile.skills || '';
+        document.getElementById('prof-interests').value = profile.interests || '';
+        document.getElementById('prof-bio').value = profile.bio || '';
+
+        document.getElementById('profile-card-name').textContent = profile.fullName || 'User';
+        document.getElementById('profile-card-email').textContent = profile.email;
+        document.getElementById('profile-card-role').textContent = (profile.roles && profile.roles.includes('ROLE_ADMIN')) ? 'Administrator' : 'Learner';
+
+        const avatar = profile.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName || 'User')}&background=4f46e5&color=fff`;
+        document.getElementById('profile-avatar-img').src = avatar;
+        document.getElementById('avatar-input').value = profile.avatarUrl || '';
+
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      }
+    });
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById('prof-name').value.trim();
+      const education = document.getElementById('prof-education').value.trim();
+      const skills = document.getElementById('prof-skills').value.trim();
+      const interests = document.getElementById('prof-interests').value.trim();
+      const bio = document.getElementById('prof-bio').value.trim();
+
+      try {
+        const updated = await Api.put('/user/profile', {
+          fullName, education, skills, interests, bio
+        });
+
+        // Update local session storage
+        const cur = Auth.getUser();
+        if (cur) {
+          cur.fullName = updated.fullName;
+          localStorage.setItem('qm_user', JSON.stringify(cur));
+        }
+
+        showToast('Profile updated successfully!', 'success');
+        renderNavbar();
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Failed to update profile.', 'error');
+      }
+    });
+
+    async function saveAvatar() {
+      const avatarUrl = document.getElementById('avatar-input').value.trim();
+      if (!avatarUrl) return;
+
+      try {
+        await Api.post('/user/avatar', { avatarUrl });
+        document.getElementById('profile-avatar-img').src = avatarUrl;
+
+        const cur = Auth.getUser();
+        if (cur) {
+          cur.avatarUrl = avatarUrl;
+          localStorage.setItem('qm_user', JSON.stringify(cur));
+        }
+
+        showToast('Profile picture updated!', 'success');
+        renderNavbar();
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Failed to update avatar.', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

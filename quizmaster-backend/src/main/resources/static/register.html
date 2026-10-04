@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register – QuizMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+  <div id="app-navbar"></div>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card card-custom p-4 p-md-5 shadow-sm border-0">
+          <div class="text-center mb-4">
+            <div class="stat-icon-wrapper bg-primary-subtle text-primary rounded-circle mx-auto mb-3">
+              <i class="bi bi-person-plus-fill fs-3"></i>
+            </div>
+            <h3 class="fw-bold">Create Your Account</h3>
+            <p class="text-muted small">Join QuizMaster to access personalized AI learning recommendations</p>
+          </div>
+
+          <div id="alert-box" class="alert alert-danger d-none py-2 small" role="alert"></div>
+
+          <form id="register-form">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Full Name *</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white text-muted"><i class="bi bi-person"></i></span>
+                  <input type="text" id="reg-name" class="form-control" placeholder="e.g. Alex Johnson" required>
+                </div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Email Address *</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white text-muted"><i class="bi bi-envelope"></i></span>
+                  <input type="email" id="reg-email" class="form-control" placeholder="name@domain.com" required>
+                </div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Password *</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white text-muted"><i class="bi bi-lock"></i></span>
+                  <input type="password" id="reg-password" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+                </div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Account Role *</label>
+                <select id="reg-role" class="form-select">
+                  <option value="learner" selected>Student / Learner</option>
+                  <option value="admin">Administrator / Faculty</option>
+                </select>
+                <div class="form-text small">Select "Administrator" if you wish to manage quizzes, categories, and review users.</div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Education / Degree</label>
+                <input type="text" id="reg-education" class="form-control" placeholder="e.g. B.Tech Computer Science (Final Year)">
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Skills (Comma-separated)</label>
+                <input type="text" id="reg-skills" class="form-control" placeholder="e.g. Java, Python, SQL, C++, Spring">
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Learning Interests</label>
+                <input type="text" id="reg-interests" class="form-control" placeholder="e.g. Machine Learning, Cloud, System Design, Algorithms">
+                <div class="form-text small">Our AI engine uses your skills and interests to curate recommended quizzes.</div>
+              </div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn btn-primary-custom w-100 py-2 mt-4">
+              <span id="btn-text"><i class="bi bi-check2-circle me-1"></i> Complete Registration</span>
+              <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+          </form>
+
+          <div class="text-center mt-4 pt-3 border-top small text-muted">
+            Already have an account? <a href="login.html" class="fw-semibold text-primary text-decoration-none">Log in here</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (Auth.isAuthenticated()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const role = document.getElementById('reg-role').value;
+      const education = document.getElementById('reg-education').value.trim();
+      const skills = document.getElementById('reg-skills').value.trim();
+      const interests = document.getElementById('reg-interests').value.trim();
+
+      const alertBox = document.getElementById('alert-box');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+      const submitBtn = document.getElementById('submit-btn');
+
+      alertBox.classList.add('d-none');
+      btnText.classList.add('d-none');
+      btnSpinner.classList.remove('d-none');
+      submitBtn.disabled = true;
+
+      try {
+        const res = await Api.post('/auth/register', {
+          fullName, email, password, role, education, skills, interests
+        });
+
+        if (res && res.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Registration Complete!',
+            text: 'Your account has been securely created. Logging you in...',
+            timer: 1500,
+            showConfirmButton: false
+          }).then(async () => {
+            // Auto login after registration
+            try {
+              const loginRes = await Api.post('/auth/login', { email, password });
+              Auth.setAuth(loginRes.token, loginRes);
+              window.location.href = 'dashboard.html';
+            } catch {
+              window.location.href = 'login.html';
+            }
+          });
+        }
+      } catch (err) {
+        alertBox.textContent = err.message || 'Registration failed. Please try again.';
+        alertBox.classList.remove('d-none');
+      } finally {
+        btnText.classList.remove('d-none');
+        btnSpinner.classList.add('d-none');
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

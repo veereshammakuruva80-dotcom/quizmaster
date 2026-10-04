@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Quizzes – QuizMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="app-navbar"></div>
+
+  <div class="app-container">
+    <div id="app-sidebar"></div>
+
+    <main class="main-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <h3 class="fw-bold mb-1">Available Quizzes</h3>
+          <p class="text-secondary small mb-0">Select a quiz to test your mastery. Real-time timer and instant scoring enabled.</p>
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      <div class="card card-custom p-3 mb-4 bg-white shadow-xs">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" id="quiz-search" class="form-control" placeholder="Search quizzes by title..." onkeyup="applyFilters()">
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <select id="category-filter" class="form-select" onchange="applyFilters()">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <select id="difficulty-filter" class="form-select" onchange="applyFilters()">
+              <option value="">All Difficulties</option>
+              <option value="BEGINNER">Beginner</option>
+              <option value="INTERMEDIATE">Intermediate</option>
+              <option value="ADVANCED">Advanced</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quizzes Grid -->
+      <div class="row g-4" id="quizzes-grid">
+        <div class="col-12 text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+          <div>Loading quizzes...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let allQuizzes = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadCategoriesFilter();
+      await loadQuizzes();
+    });
+
+    async function loadCategoriesFilter() {
+      try {
+        const categories = await Api.get('/categories');
+        const sel = document.getElementById('category-filter');
+        const params = new URLSearchParams(window.location.search);
+        const selectedCat = params.get('categoryId');
+
+        categories.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.name;
+          if (selectedCat && selectedCat == c.id) {
+            opt.selected = true;
+          }
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Error loading category filters:', e);
+      }
+    }
+
+    async function loadQuizzes() {
+      try {
+        allQuizzes = await Api.get('/quizzes');
+        applyFilters();
+      } catch (err) {
+        document.getElementById('quizzes-grid').innerHTML = `
+          <div class="col-12 text-center text-danger py-4">Failed to load quizzes. Please try again.</div>
+        `;
+      }
+    }
+
+    function applyFilters() {
+      const q = document.getElementById('quiz-search').value.toLowerCase();
+      const catId = document.getElementById('category-filter').value;
+      const diff = document.getElementById('difficulty-filter').value;
+
+      const filtered = allQuizzes.filter(quiz => {
+        const matchesQ = quiz.title.toLowerCase().includes(q) || (quiz.description && quiz.description.toLowerCase().includes(q));
+        const matchesCat = !catId || quiz.categoryId == catId;
+        const matchesDiff = !diff || quiz.difficulty.toUpperCase() === diff.toUpperCase();
+        return matchesQ && matchesCat && matchesDiff;
+      });
+
+      renderQuizzes(filtered);
+    }
+
+    function renderQuizzes(list) {
+      const grid = document.getElementById('quizzes-grid');
+      if (!list || list.length === 0) {
+        grid.innerHTML = '<div class="col-12 text-center text-muted py-5">No quizzes match your filter criteria.</div>';
+        return;
+      }
+
+      grid.innerHTML = list.map(q => {
+        let diffBadge = 'bg-secondary';
+        if (q.difficulty === 'BEGINNER') diffBadge = 'bg-success-subtle text-success border border-success border-opacity-25';
+        else if (q.difficulty === 'INTERMEDIATE') diffBadge = 'bg-warning-subtle text-warning border border-warning border-opacity-25';
+        else if (q.difficulty === 'ADVANCED') diffBadge = 'bg-danger-subtle text-danger border border-danger border-opacity-25';
+
+        return `
+          <div class="col-md-6 col-lg-4">
+            <div class="card card-custom p-4 h-100 card-hover-lift d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge" style="background: ${q.categoryColor || '#4f46e5'}20; color: ${q.categoryColor || '#4f46e5'};">
+                  <i class="bi ${q.categoryIcon || 'bi-bookmark'} me-1"></i> ${q.categoryName}
+                </span>
+                <span class="badge ${diffBadge} fw-semibold">${q.difficulty}</span>
+              </div>
+
+              <h5 class="fw-bold text-dark mb-2">${q.title}</h5>
+              <p class="text-secondary small mb-3 flex-grow-1">${q.description || 'Test your knowledge and earn badges.'}</p>
+
+              <div class="row g-2 text-muted small py-2 mb-3 border-top border-bottom">
+                <div class="col-4 text-center">
+                  <i class="bi bi-question-circle text-primary"></i>
+                  <div class="fw-bold text-dark">${q.questionCount || 0} Qs</div>
+                </div>
+                <div class="col-4 text-center border-start border-end">
+                  <i class="bi bi-clock text-warning"></i>
+                  <div class="fw-bold text-dark">${q.timeLimitMinutes} Mins</div>
+                </div>
+                <div class="col-4 text-center">
+                  <i class="bi bi-award text-success"></i>
+                  <div class="fw-bold text-dark">${q.totalMarks} Pts</div>
+                </div>
+              </div>
+
+              <a href="quiz-instructions.html?id=${q.id}" class="btn btn-primary-custom w-100 mt-auto">
+                <i class="bi bi-play-circle-fill me-1"></i> Take Quiz
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

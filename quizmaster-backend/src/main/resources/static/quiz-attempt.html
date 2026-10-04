@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz in Progress – QuizMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background-color: #f1f5f9; }
+    .quiz-viewport { max-width: 1100px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+
+  <!-- Fixed Assessment Header -->
+  <header class="quiz-header shadow-xs">
+    <div class="d-flex align-items-center gap-3">
+      <div class="stat-icon-wrapper bg-primary text-white rounded-circle" style="width: 40px; height: 40px; font-size: 1.1rem;">
+        <i class="bi bi-mortarboard-fill"></i>
+      </div>
+      <div>
+        <h6 class="fw-bold mb-0 text-dark" id="header-quiz-title">Loading Assessment...</h6>
+        <span class="small text-muted" id="header-quiz-cat">QuizMaster Portal</span>
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+      <div class="timer-box normal" id="timer-box">
+        <i class="bi bi-stopwatch"></i>
+        <span id="timer-display">--:--</span>
+      </div>
+
+      <button class="btn btn-danger btn-sm px-3 fw-semibold" onclick="confirmSubmitQuiz()">
+        <i class="bi bi-check2-circle me-1"></i> Finish &amp; Submit
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="progress" style="height: 4px; border-radius: 0;">
+    <div id="quiz-progress-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+  </div>
+
+  <div class="container-fluid quiz-viewport py-4 px-3 px-md-4">
+    <div class="row g-4">
+      <!-- Main Question Container (1 question at a time) -->
+      <div class="col-lg-8">
+        <div class="card card-custom p-4 p-md-5 bg-white shadow-sm mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary fw-bold" id="question-index-badge">Question 1 of --</span>
+            <div class="d-flex gap-2">
+              <span class="badge bg-light text-dark border" id="question-marks-badge">5 Marks</span>
+              <span class="badge bg-light text-secondary border" id="question-type-badge">MCQ</span>
+            </div>
+          </div>
+
+          <!-- Question Text -->
+          <h5 class="fw-bold text-dark lh-base mb-4" id="question-text">
+            Loading question...
+          </h5>
+
+          <!-- Options Container -->
+          <div id="options-container" class="mb-4">
+            <!-- Dynamic options rendered here -->
+          </div>
+
+          <!-- Question Action Bar -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center pt-3 border-top gap-2">
+            <button class="btn btn-outline-warning btn-sm" id="btn-mark-review" onclick="toggleMarkReview()">
+              <i class="bi bi-bookmark-star"></i> Mark for Review
+            </button>
+
+            <div class="d-flex gap-2">
+              <button class="btn btn-light border btn-sm px-3" id="btn-prev" onclick="prevQuestion()" disabled>
+                <i class="bi bi-chevron-left me-1"></i> Previous
+              </button>
+              <button class="btn btn-primary-custom btn-sm px-4" id="btn-next" onclick="nextQuestion()">
+                Next <i class="bi bi-chevron-right ms-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question Palette & Summary Sidebar -->
+      <div class="col-lg-4">
+        <div class="card card-custom p-4 bg-white shadow-sm">
+          <h6 class="fw-bold text-dark mb-3"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Question Palette</h6>
+          
+          <div class="d-flex flex-wrap gap-2 mb-4" id="question-palette">
+            <!-- Palette buttons rendered here -->
+          </div>
+
+          <!-- Legend -->
+          <div class="small d-flex flex-column gap-2 border-top pt-3 text-secondary">
+            <div class="d-flex align-items-center gap-2">
+              <span class="palette-btn answered" style="width: 22px; height: 22px; font-size: 10px;">&checkmark;</span>
+              <span>Answered</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="palette-btn review" style="width: 22px; height: 22px; font-size: 10px;">&starf;</span>
+              <span>Marked for Review</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="palette-btn unanswered" style="width: 22px; height: 22px; font-size: 10px;">-</span>
+              <span>Not Answered</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="palette-btn current" style="width: 22px; height: 22px; font-size: 10px;">1</span>
+              <span>Current Question</span>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-top text-center">
+            <button class="btn btn-danger w-100 fw-semibold" onclick="confirmSubmitQuiz()">
+              Submit Assessment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    const params = new URLSearchParams(window.location.search);
+    const quizId = params.get('quizId');
+    if (!quizId) window.location.href = 'quizzes.html';
+
+    let attemptId = null;
+    let questions = [];
+    let currentIndex = 0;
+    let userAnswers = {}; // questionId -> [selectedOptionIds]
+    let markedForReview = new Set();
+    let timeRemainingSeconds = 0;
+    let timerInterval = null;
+    let startTimeEpoch = Date.now();
+    let isSubmitting = false;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const data = await Api.post(`/quizzes/${quizId}/start`, {});
+        if (!data || !data.questions || data.questions.length === 0) {
+          Swal.fire('No Questions', 'This quiz does not have active questions yet.', 'info').then(() => {
+            window.location.href = 'quizzes.html';
+          });
+          return;
+        }
+
+        attemptId = data.attemptId;
+        questions = data.questions;
+        document.getElementById('header-quiz-title').textContent = data.quiz.title;
+        document.getElementById('header-quiz-cat').textContent = data.quiz.categoryName;
+
+        // Initialize timer
+        timeRemainingSeconds = (data.quiz.timeLimitMinutes || 15) * 60;
+        startTimer();
+
+        // Render first question & palette
+        renderQuestion(0);
+        renderPalette();
+
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Could not start quiz session.', 'error').then(() => {
+          window.location.href = 'quizzes.html';
+        });
+      }
+    });
+
+    function startTimer() {
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeRemainingSeconds--;
+        updateTimerDisplay();
+
+        if (timeRemainingSeconds <= 0) {
+          clearInterval(timerInterval);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Time Expired!',
+            text: 'Your quiz time has finished. Your responses are being submitted automatically.',
+            timer: 3000,
+            showConfirmButton: false
+          }).then(() => {
+            submitQuiz(true);
+          });
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(timeRemainingSeconds / 60);
+      const secs = timeRemainingSeconds % 60;
+      const display = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      const el = document.getElementById('timer-display');
+      if (el) el.textContent = display;
+
+      const box = document.getElementById('timer-box');
+      if (timeRemainingSeconds <= 120 && box) {
+        box.classList.remove('normal');
+      }
+    }
+
+    function renderQuestion(index) {
+      if (index < 0 || index >= questions.length) return;
+      currentIndex = index;
+      const q = questions[index];
+
+      // Badges
+      document.getElementById('question-index-badge').textContent = `Question ${index + 1} of ${questions.length}`;
+      document.getElementById('question-marks-badge').textContent = `${q.marks || 5} Marks`;
+      document.getElementById('question-type-badge').textContent = q.questionType.replace('_', ' ');
+      document.getElementById('question-text').textContent = q.questionText;
+
+      // Progress bar
+      const pct = ((index + 1) / questions.length) * 100;
+      document.getElementById('quiz-progress-bar').style.width = `${pct}%`;
+
+      // Buttons
+      document.getElementById('btn-prev').disabled = index === 0;
+      document.getElementById('btn-next').textContent = (index === questions.length - 1) ? 'Review & Submit' : 'Next Question';
+
+      // Mark for review button state
+      const isMarked = markedForReview.has(q.id);
+      const reviewBtn = document.getElementById('btn-mark-review');
+      if (isMarked) {
+        reviewBtn.innerHTML = '<i class="bi bi-bookmark-check-fill text-warning"></i> Marked for Review';
+        reviewBtn.classList.replace('btn-outline-warning', 'btn-warning');
+      } else {
+        reviewBtn.innerHTML = '<i class="bi bi-bookmark-star"></i> Mark for Review';
+        reviewBtn.classList.replace('btn-warning', 'btn-outline-warning');
+      }
+
+      // Render Options
+      const optContainer = document.getElementById('options-container');
+      const selectedIds = userAnswers[q.id] || [];
+      const isMulti = q.questionType === 'MULTIPLE_ANSWER';
+
+      optContainer.innerHTML = q.options.map(opt => {
+        const isSelected = selectedIds.includes(opt.id);
+        const iconType = isMulti 
+          ? (isSelected ? 'bi-check-square-fill text-primary' : 'bi-square text-muted')
+          : (isSelected ? 'bi-record-circle-fill text-primary' : 'bi-circle text-muted');
+
+        return `
+          <div class="question-option-card ${isSelected ? 'selected' : ''}" onclick="selectOption(${q.id}, ${opt.id}, ${isMulti})">
+            <i class="bi ${iconType} fs-5"></i>
+            <span class="fw-semibold text-dark">${opt.optionText}</span>
+          </div>
+        `;
+      }).join('');
+
+      renderPalette();
+    }
+
+    function selectOption(questionId, optionId, isMulti) {
+      if (!userAnswers[questionId]) {
+        userAnswers[questionId] = [];
+      }
+
+      if (isMulti) {
+        const idx = userAnswers[questionId].indexOf(optionId);
+        if (idx > -1) {
+          userAnswers[questionId].splice(idx, 1);
+        } else {
+          userAnswers[questionId].push(optionId);
+        }
+      } else {
+        userAnswers[questionId] = [optionId];
+      }
+
+      renderQuestion(currentIndex);
+    }
+
+    function toggleMarkReview() {
+      const q = questions[currentIndex];
+      if (markedForReview.has(q.id)) {
+        markedForReview.delete(q.id);
+      } else {
+        markedForReview.add(q.id);
+      }
+      renderQuestion(currentIndex);
+    }
+
+    function nextQuestion() {
+      if (currentIndex < questions.length - 1) {
+        renderQuestion(currentIndex + 1);
+      } else {
+        confirmSubmitQuiz();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentIndex > 0) {
+        renderQuestion(currentIndex - 1);
+      }
+    }
+
+    function jumpToQuestion(idx) {
+      renderQuestion(idx);
+    }
+
+    function renderPalette() {
+      const palette = document.getElementById('question-palette');
+      if (!palette) return;
+
+      palette.innerHTML = questions.map((q, idx) => {
+        const isCur = idx === currentIndex;
+        const isAnswered = userAnswers[q.id] && userAnswers[q.id].length > 0;
+        const isMarked = markedForReview.has(q.id);
+
+        let cls = 'unanswered';
+        if (isMarked) cls = 'review';
+        else if (isAnswered) cls = 'answered';
+
+        return `
+          <button class="palette-btn ${cls} ${isCur ? 'current' : ''}" onclick="jumpToQuestion(${idx})" title="Question ${idx + 1}">
+            ${idx + 1}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function confirmSubmitQuiz() {
+      const answeredCount = Object.keys(userAnswers).filter(k => userAnswers[k].length > 0).length;
+      const totalCount = questions.length;
+      const unansweredCount = totalCount - answeredCount;
+
+      Swal.fire({
+        title: 'Submit Assessment?',
+        html: `
+          <div class="text-start p-2">
+            <p>Are you sure you want to finish and submit your quiz?</p>
+            <ul class="small text-muted mb-0">
+              <li>Answered: <strong>${answeredCount}</strong></li>
+              <li>Unanswered: <strong>${unansweredCount}</strong></li>
+              <li>Marked for Review: <strong>${markedForReview.size}</strong></li>
+            </ul>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Submit Now',
+        cancelButtonText: 'Continue Assessment',
+        confirmButtonColor: '#4f46e5'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          submitQuiz(false);
+        }
+      });
+    }
+
+    async function submitQuiz(autoTimeout = false) {
+      if (isSubmitting) return;
+      isSubmitting = true;
+      clearInterval(timerInterval);
+
+      Swal.fire({
+        title: 'Grading Responses...',
+        text: 'Analyzing answers and generating AI recommendations.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      const timeTakenSeconds = Math.round((Date.now() - startTimeEpoch) / 1000);
+
+      const submissionPayload = {
+        attemptId: attemptId,
+        timeTakenSeconds: timeTakenSeconds,
+        answers: questions.map(q => ({
+          questionId: q.id,
+          selectedOptionIds: userAnswers[q.id] || [],
+          timeSpentSeconds: 0
+        }))
+      };
+
+      try {
+        const result = await Api.post('/quizzes/submit', submissionPayload);
+        if (result && result.attemptId) {
+          window.location.href = `quiz-result.html?attemptId=${result.attemptId}`;
+        }
+      } catch (err) {
+        Swal.fire('Submission Error', err.message || 'Error recording submission.', 'error');
+        isSubmitting = false;
+      }
+    }
+  </script>
+</body>
+</html>

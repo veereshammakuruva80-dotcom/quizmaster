@@ -1,0 +1,37 @@
+# Maven & Build artifacts
+target/
+quizmaster-backend/target/
+*.jar
+*.war
+*.nar
+*.ear
+*.class
+
+# Portable Tools & Binaries
+tools/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# IDEs & Editors
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

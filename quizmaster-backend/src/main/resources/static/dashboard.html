@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – QuizMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <div id="app-navbar"></div>
+
+  <div class="app-container">
+    <!-- Sidebar -->
+    <div id="app-sidebar"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <h3 class="fw-bold mb-1" id="dash-greeting">Welcome back!</h3>
+          <p class="text-secondary small mb-0">Here is your real-time learning progress and AI recommendations.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="quizzes.html" class="btn btn-primary-custom btn-sm">
+            <i class="bi bi-play-circle-fill me-1"></i> Start New Quiz
+          </a>
+          <a href="recommendations.html" class="btn btn-outline-custom btn-sm">
+            <i class="bi bi-stars me-1"></i> AI Suggestions
+          </a>
+        </div>
+      </div>
+
+      <!-- Overview Stats Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="card card-custom p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon-wrapper bg-primary-subtle text-primary">
+                <i class="bi bi-journal-check"></i>
+              </div>
+              <div>
+                <div class="stat-value" id="stat-attempts">0</div>
+                <div class="stat-label">Quizzes Completed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card card-custom p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon-wrapper bg-success-subtle text-success">
+                <i class="bi bi-percent"></i>
+              </div>
+              <div>
+                <div class="stat-value" id="stat-avg-score">0%</div>
+                <div class="stat-label">Average Score</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card card-custom p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon-wrapper bg-warning-subtle text-warning">
+                <i class="bi bi-trophy-fill"></i>
+              </div>
+              <div>
+                <div class="stat-value" id="stat-high-score">0%</div>
+                <div class="stat-label">Highest Score</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card card-custom p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon-wrapper bg-danger-subtle text-danger">
+                <i class="bi bi-fire"></i>
+              </div>
+              <div>
+                <div class="stat-value" id="stat-streak">0 Days</div>
+                <div class="stat-label">Learning Streak</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strengths, Weaknesses, and AI Recommendations -->
+      <div class="row g-4 mb-4">
+        <!-- Strong & Weak Subjects -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+              <i class="bi bi-pie-chart-fill text-primary"></i> Subject Proficiency Analysis
+            </h5>
+
+            <div class="mb-3">
+              <div class="text-uppercase small fw-bold text-success mb-2"><i class="bi bi-check-circle me-1"></i> Strong Subjects (Score &ge; 70%)</div>
+              <div id="strong-subjects-container" class="d-flex flex-wrap gap-2">
+                <span class="text-muted small">Complete quizzes to calculate your strongest subjects.</span>
+              </div>
+            </div>
+
+            <hr class="text-secondary opacity-25">
+
+            <div>
+              <div class="text-uppercase small fw-bold text-danger mb-2"><i class="bi bi-exclamation-triangle me-1"></i> Weak Subjects (Needs Focus)</div>
+              <div id="weak-subjects-container" class="d-flex flex-wrap gap-2">
+                <span class="text-muted small">No critical weak subjects identified yet!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Recommendations Card -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4 h-100 border-primary border-opacity-25" style="background: linear-gradient(180deg, #fbfbfe 0%, #fff 100%);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0 text-primary d-flex align-items-center gap-2">
+                <i class="bi bi-stars text-warning"></i> AI Recommended Quizzes
+              </h5>
+              <a href="recommendations.html" class="small fw-semibold text-decoration-none">Full Report &rarr;</a>
+            </div>
+
+            <div id="recommended-quizzes-list" class="d-flex flex-column gap-2">
+              <div class="text-center py-4 text-muted small">
+                <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+                <div>Generating AI recommendations...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+          <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3">Performance History (Last Attempts)</h5>
+            <div style="height: 260px;">
+              <canvas id="scoreHistoryChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3">Questions Breakdown</h5>
+            <div style="height: 260px;" class="d-flex align-items-center justify-content-center">
+              <canvas id="accuracyDonutChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Quiz Attempts Table -->
+      <div class="card card-custom p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">Recent Quiz Attempts</h5>
+          <a href="quizzes.html" class="btn btn-sm btn-outline-custom">Take Another Quiz</a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small">
+              <tr>
+                <th>Quiz Title</th>
+                <th>Category</th>
+                <th>Score</th>
+                <th>Percentage</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="recent-attempts-tbody">
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted small">Loading quiz history...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    let historyChart = null;
+    let donutChart = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = Auth.getUser();
+      if (user && user.fullName) {
+        document.getElementById('dash-greeting').textContent = `Welcome back, ${user.fullName.split(' ')[0]}!`;
+      }
+
+      await loadDashboardStats();
+    });
+
+    async function loadDashboardStats() {
+      try {
+        const stats = await Api.get('/dashboard/stats');
+        if (!stats) return;
+
+        // Counters
+        document.getElementById('stat-attempts').textContent = stats.totalQuizzesCompleted || 0;
+        document.getElementById('stat-avg-score').textContent = `${stats.averageScore || 0}%`;
+        document.getElementById('stat-high-score').textContent = `${stats.highestScore || 0}%`;
+        document.getElementById('stat-streak').textContent = `${stats.currentStreak || 1} Days`;
+
+        // Strong Subjects
+        const strongContainer = document.getElementById('strong-subjects-container');
+        if (stats.strongSubjects && stats.strongSubjects.length > 0) {
+          strongContainer.innerHTML = stats.strongSubjects.map(s => `
+            <span class="badge bg-success-subtle text-success p-2 fs-7 fw-semibold border border-success border-opacity-25">
+              <i class="bi bi-award-fill me-1"></i> ${s.subject} (${s.avgScore}%)
+            </span>
+          `).join('');
+        } else {
+          strongContainer.innerHTML = '<span class="text-muted small">Complete quizzes with &ge; 70% to register strong subjects.</span>';
+        }
+
+        // Weak Subjects
+        const weakContainer = document.getElementById('weak-subjects-container');
+        if (stats.weakSubjects && stats.weakSubjects.length > 0) {
+          weakContainer.innerHTML = stats.weakSubjects.map(w => `
+            <span class="badge bg-danger-subtle text-danger p-2 fs-7 fw-semibold border border-danger border-opacity-25">
+              <i class="bi bi-arrow-repeat me-1"></i> ${w.subject} (${w.avgScore}%)
+            </span>
+          `).join('');
+        } else {
+          weakContainer.innerHTML = '<span class="text-muted small">No critical weak subjects identified yet! Great work!</span>';
+        }
+
+        // Recommended Quizzes
+        const recList = document.getElementById('recommended-quizzes-list');
+        if (stats.recommendedQuizzes && stats.recommendedQuizzes.length > 0) {
+          recList.innerHTML = stats.recommendedQuizzes.slice(0, 3).map(r => {
+            const q = r.quiz;
+            return `
+              <div class="p-3 border rounded bg-white shadow-xs">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                  <h6 class="fw-bold mb-0 text-dark">${q.title}</h6>
+                  <span class="badge bg-primary-subtle text-primary">${q.difficulty}</span>
+                </div>
+                <div class="small text-muted mb-2"><i class="bi bi-tag-fill me-1"></i> ${q.categoryName}</div>
+                <p class="small text-secondary mb-2" style="font-size: 0.8rem;">${r.reason || 'Curated recommendation.'}</p>
+                <a href="quiz-instructions.html?id=${q.id}" class="btn btn-sm btn-primary-custom py-1 px-3">
+                  Take Quiz <i class="bi bi-arrow-right small"></i>
+                </a>
+              </div>
+            `;
+          }).join('');
+        } else {
+          recList.innerHTML = '<div class="text-muted small py-3">Explore quizzes to unlock tailored AI suggestions.</div>';
+        }
+
+        // Recent Attempts Table
+        const tbody = document.getElementById('recent-attempts-tbody');
+        if (stats.recentAttempts && stats.recentAttempts.length > 0) {
+          tbody.innerHTML = stats.recentAttempts.map(a => `
+            <tr>
+              <td class="fw-semibold text-dark">${a.quizTitle}</td>
+              <td><span class="badge bg-light text-dark border">${a.category}</span></td>
+              <td>${a.score} pts</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                    <div class="progress-bar ${a.passed ? 'bg-success' : 'bg-danger'}" style="width: ${a.percentage}%"></div>
+                  </div>
+                  <span class="small fw-bold">${a.percentage}%</span>
+                </div>
+              </td>
+              <td>
+                ${a.passed ? '<span class="badge bg-success-subtle text-success">Passed</span>' : '<span class="badge bg-danger-subtle text-danger">Failed</span>'}
+              </td>
+              <td class="text-muted small">${a.date}</td>
+              <td>
+                <a href="quiz-result.html?attemptId=${a.id}" class="btn btn-sm btn-light border py-1 px-2 text-primary" title="View Result">
+                  <i class="bi bi-eye"></i> Result
+                </a>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted small">No quiz attempts yet. <a href="quizzes.html" class="fw-bold">Start your first quiz now!</a></td></tr>`;
+        }
+
+        // Render Charts with real data
+        renderDashboardCharts(stats);
+
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      }
+    }
+
+    function renderDashboardCharts(stats) {
+      // 1. Line / Bar Chart for Attempts
+      const ctxHistory = document.getElementById('scoreHistoryChart').getContext('2d');
+      const attempts = (stats.recentAttempts || []).slice().reverse();
+      const labels = attempts.map(a => a.quizTitle.substring(0, 15) + '...');
+      const scores = attempts.map(a => a.percentage);
+
+      if (historyChart) historyChart.destroy();
+      historyChart = new Chart(ctxHistory, {
+        type: 'line',
+        data: {
+          labels: labels.length ? labels : ['Sample 1', 'Sample 2', 'Sample 3'],
+          datasets: [{
+            label: 'Score Percentage (%)',
+            data: scores.length ? scores : [0, 0, 0],
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#4f46e5',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+          }
+        }
+      });
+
+      // 2. Donut Chart for Accuracy
+      const ctxDonut = document.getElementById('accuracyDonutChart').getContext('2d');
+      const totalAnswered = stats.totalQuestionsAnswered || 0;
+      const avg = stats.averageScore || 0;
+      const estimatedCorrect = Math.round((totalAnswered * avg) / 100);
+      const estimatedIncorrect = totalAnswered - estimatedCorrect;
+
+      if (donutChart) donutChart.destroy();
+      donutChart = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Correct', 'Incorrect/Unanswered'],
+          datasets: [{
+            data: totalAnswered > 0 ? [estimatedCorrect, estimatedIncorrect] : [1, 0],
+            backgroundColor: ['#10b981', '#ef4444'],
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

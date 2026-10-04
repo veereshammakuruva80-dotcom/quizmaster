@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Categories – QuizMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="app-navbar"></div>
+
+  <div class="app-container">
+    <div id="app-sidebar"></div>
+
+    <main class="main-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <h3 class="fw-bold mb-1">Subject Categories</h3>
+          <p class="text-secondary small mb-0">Browse through 16 curated engineering, programming, and general knowledge domains.</p>
+        </div>
+        <div class="input-group" style="max-width: 320px;">
+          <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+          <input type="text" id="category-search" class="form-control" placeholder="Search categories..." onkeyup="filterCategories()">
+        </div>
+      </div>
+
+      <div class="row g-4" id="categories-grid">
+        <div class="col-12 text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+          <div>Loading categories...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let allCategories = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        allCategories = await Api.get('/categories');
+        renderCategories(allCategories);
+      } catch (err) {
+        document.getElementById('categories-grid').innerHTML = `
+          <div class="col-12 text-center text-danger py-4">Failed to load categories. Please refresh.</div>
+        `;
+      }
+    });
+
+    function renderCategories(list) {
+      const grid = document.getElementById('categories-grid');
+      if (!list || list.length === 0) {
+        grid.innerHTML = '<div class="col-12 text-center text-muted py-5">No categories match your search.</div>';
+        return;
+      }
+
+      grid.innerHTML = list.map(c => `
+        <div class="col-md-6 col-lg-4 col-xl-3 category-card-item">
+          <div class="card card-custom p-4 h-100 card-hover-lift">
+            <div class="stat-icon-wrapper rounded-circle mb-3" style="background: ${c.colorCode}18; color: ${c.colorCode};">
+              <i class="bi ${c.icon || 'bi-bookmark'} fs-4"></i>
+            </div>
+            <h5 class="fw-bold mb-2 text-dark">${c.name}</h5>
+            <p class="text-secondary small mb-4 flex-grow-1" style="min-height: 48px;">
+              ${c.description || 'Explore core principles and test questions in this topic.'}
+            </p>
+            <a href="quizzes.html?categoryId=${c.id}" class="btn btn-outline-custom w-100">
+              Browse Quizzes <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterCategories() {
+      const q = document.getElementById('category-search').value.toLowerCase();
+      const filtered = allCategories.filter(c => 
+        c.name.toLowerCase().includes(q) || 
+        (c.description && c.description.toLowerCase().includes(q))
+      );
+      renderCategories(filtered);
+    }
+  </script>
+</body>
+</html>

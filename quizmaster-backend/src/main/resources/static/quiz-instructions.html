@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Instructions – QuizMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+  <div id="app-navbar"></div>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card card-custom p-4 p-md-5 shadow-sm border-0">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <span class="badge bg-primary-subtle text-primary mb-2" id="quiz-cat-badge">Category</span>
+              <h3 class="fw-bold text-dark mb-1" id="quiz-title">Loading Quiz...</h3>
+              <p class="text-secondary small" id="quiz-desc"></p>
+            </div>
+            <span class="badge bg-secondary" id="quiz-diff-badge">Difficulty</span>
+          </div>
+
+          <hr class="text-secondary opacity-25">
+
+          <!-- Key Specs -->
+          <div class="row g-3 text-center my-3">
+            <div class="col-6 col-md-3">
+              <div class="p-3 bg-light rounded border">
+                <i class="bi bi-clock-history fs-3 text-primary mb-1 d-block"></i>
+                <div class="fw-bold fs-5 text-dark" id="quiz-time">-- Mins</div>
+                <div class="small text-muted">Time Limit</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="p-3 bg-light rounded border">
+                <i class="bi bi-card-checklist fs-3 text-warning mb-1 d-block"></i>
+                <div class="fw-bold fs-5 text-dark" id="quiz-qcount">-- Qs</div>
+                <div class="small text-muted">Questions</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="p-3 bg-light rounded border">
+                <i class="bi bi-award-fill fs-3 text-success mb-1 d-block"></i>
+                <div class="fw-bold fs-5 text-dark" id="quiz-marks">-- Marks</div>
+                <div class="small text-muted">Total Marks</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="p-3 bg-light rounded border">
+                <i class="bi bi-check2-circle fs-3 text-info mb-1 d-block"></i>
+                <div class="fw-bold fs-5 text-dark" id="quiz-pass">--%</div>
+                <div class="small text-muted">Passing Score</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rules and Instructions -->
+          <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-info-circle-fill text-primary me-2"></i>Assessment Rules & Instructions</h5>
+          <ul class="text-secondary small d-flex flex-column gap-2 mb-4 ps-3">
+            <li><strong>Single Question View:</strong> Questions will appear one at a time with instant navigation buttons.</li>
+            <li><strong>Auto-Submit Timer:</strong> The live countdown timer runs at the top right. When time expires, your responses will be submitted automatically.</li>
+            <li><strong>Mark for Review:</strong> You can bookmark questions for review before submitting your assessment.</li>
+            <li><strong>Instant AI Evaluation:</strong> Upon submission, you will receive an in-depth score analysis, answer key with explanations, and AI learning recommendations.</li>
+            <li><strong>Anti-Tamper Lock:</strong> Once submitted, the attempt is sealed to prevent duplicate entries.</li>
+          </ul>
+
+          <div class="form-check p-3 bg-light rounded border mb-4">
+            <input class="form-check-input ms-0 me-2" type="checkbox" id="agree-check" onchange="toggleStartBtn()">
+            <label class="form-check-label small fw-semibold text-dark" for="agree-check">
+              I have read and understood all the assessment rules and am ready to begin.
+            </label>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="quizzes.html" class="btn btn-outline-secondary btn-sm">&larr; Back to Quizzes</a>
+            <button id="start-btn" class="btn btn-primary-custom px-4" disabled onclick="startAttempt()">
+              <i class="bi bi-play-fill me-1"></i> Start Assessment Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    const params = new URLSearchParams(window.location.search);
+    const quizId = params.get('id');
+
+    if (!quizId) {
+      window.location.href = 'quizzes.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const quiz = await Api.get(`/quizzes/${quizId}/instructions`);
+        document.getElementById('quiz-title').textContent = quiz.title;
+        document.getElementById('quiz-desc').textContent = quiz.description || 'Test your proficiency and earn badges.';
+        document.getElementById('quiz-cat-badge').textContent = quiz.categoryName;
+        document.getElementById('quiz-diff-badge').textContent = quiz.difficulty;
+        document.getElementById('quiz-time').textContent = `${quiz.timeLimitMinutes} Mins`;
+        document.getElementById('quiz-qcount').textContent = `${quiz.questionCount || 0} Qs`;
+        document.getElementById('quiz-marks').textContent = `${quiz.totalMarks} Pts`;
+        document.getElementById('quiz-pass').textContent = `${quiz.passPercentage}%`;
+      } catch (err) {
+        Swal.fire('Error', 'Failed to load quiz details', 'error').then(() => {
+          window.location.href = 'quizzes.html';
+        });
+      }
+    });
+
+    function toggleStartBtn() {
+      const check = document.getElementById('agree-check').checked;
+      document.getElementById('start-btn').disabled = !check;
+    }
+
+    function startAttempt() {
+      window.location.href = `quiz-attempt.html?quizId=${quizId}`;
+    }
+  </script>
+</body>
+</html>
