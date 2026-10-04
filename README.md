@@ -167,3 +167,4 @@ $$\text{Accuracy}_{\text{topic}} = \frac{\text{Correct Answers}_{\text{topic}}}{
    - Beginner/Intermediate difficulties are prioritized for weak topics, while Advanced difficulties are selected for mastered topics.
 3. **High-Availability Fallback**:
    - If the Python microservice is ever stopped, the Spring Boot backend automatically triggers an internal algorithmic fallback to guarantee 100% platform uptime.
+"# quizewebsite" 
